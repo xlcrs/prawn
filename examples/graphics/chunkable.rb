@@ -8,8 +8,16 @@ def paint(canvas, filename)
   doc.render_file(filename)
 end
 
-canvas = Prawn::Canvas.new
-canvas.line(:point1 => [100,100], :point2 => [150,175])
+canvas = Prawn::Canvas.new(Prawn::State.new)
+
+6.times do |i|
+  canvas.line_width += 1
+  canvas.move_to :point => [20*(i+1), 20*(i+1)]
+  canvas.line_to :point => [20*(i+2), 20*(i+2)]
+  canvas.stroke
+end
+
+canvas.line_width = 1
 
 canvas.curve(:point1 => [100,100],
              :point2 => [50,50], 
@@ -23,6 +31,7 @@ canvas.stroke
 canvas.ellipse(:point => [200,200], :x_radius => 10, :y_radius => 20)
 
 canvas.fill
+
 
 circle = canvas.circle!(:point => [250,200], :radius => 20)
 puts circle.to_pdf
@@ -43,6 +52,9 @@ canvas.stroke
 
 paint(canvas, "x.pdf")
 
-canvas.find_chunks(:command => :line).first[:point2] = [150, 300]
-paint(canvas, "y.pdf")
+
+
+
+
+
 

@@ -2,15 +2,24 @@ module Prawn
   class Canvas
     include Prawn::Chunkable
 
-    def initialize
+    def initialize(state)
       @chunks = []
+      @state  = state
+      synchronize_state
     end
 
-    attr_accessor :chunks
+    def synchronize_state
+      self.set_line_width(state.drawing.line_width)
+    end
+
+    attr_accessor :chunks, :state
 
     chunk_methods :move_to, :line_to, :line, :stroke, :fill,
                   :curve_to, :curve, :rectangle, :ellipse, :circle, 
-                  :polygon, :rounded_vertex, :rounded_polygon, :rounded_rectangle
+                  :polygon, :rounded_vertex, :rounded_polygon, :rounded_rectangle,
+                  :set_line_width
+
+    alias_method :line_width=, :set_line_width
 
     def move_to!(params)
       chunk(:move_to, params) do |c|
@@ -105,6 +114,17 @@ module Prawn
 
     def fill_and_stroke!
       chunk(:fill_and_stroke) { raw_chunk("b") }
+    end
+
+    def line_width
+      find_chunks(:command => :set_line_width).last[:width]
+    end
+
+    def set_line_width!(width)
+      chunk(:set_line_width, :width => width) do |c|
+        state.drawing.line_width = c[:width]
+        raw_chunk("#{c[:width]} w")
+      end
     end
      
     def rectangle!(params)
