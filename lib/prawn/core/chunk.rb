@@ -1,10 +1,22 @@
 module Prawn
   module Core
+
+    class RawChunk
+      def initialize(content)
+        @content = content
+        @command = :raw_pdf_text
+        @params  = {}
+      end
+
+      attr_accessor :content, :command, :params
+      alias_method  :to_pdf, :content
+    end
+
     class Chunk
       def initialize(command, params={}, &action)
-         @command      = command 
-         @params       = params
-         @action       = action
+        @command      = command 
+        @params       = params
+        @action       = action
       end
 
       attr_reader :command, :params, :action
@@ -17,10 +29,10 @@ module Prawn
         case results = content
         when Array
           results.map { |sub_chunk| sub_chunk.to_pdf }.join("\n")
-        when Prawn::Core::Chunk
+        when Prawn::Core::Chunk, Prawn::Core::RawChunk
           results.to_pdf
         else
-          results
+          raise "Bad Chunk: #{results.class} not supported"
         end
       end
 

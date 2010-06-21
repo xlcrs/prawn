@@ -4,6 +4,10 @@ module Prawn
       Prawn::Core::Chunk.new(*a, &b)
     end
 
+    def raw_chunk(*a, &b)
+      Prawn::Core::RawChunk.new(*a, &b)
+    end
+
     def find_chunks(params)
       if params[:command]
         chunks.select { |c| c.command == params[:command] }

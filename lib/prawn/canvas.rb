@@ -9,17 +9,18 @@ module Prawn
     attr_accessor :chunks
 
     chunk_methods :move_to, :line_to, :line, :stroke, :fill,
-                  :curve_to, :curve, :rectangle, :ellipse, :circle
+                  :curve_to, :curve, :rectangle, :ellipse, :circle, 
+                  :polygon, :rounded_vertex, :rounded_polygon, :rounded_rectangle
 
     def move_to!(params)
       chunk(:move_to, params) do |c|
-        "%.3f %.3f m" % c[:point]
+        raw_chunk("%.3f %.3f m" % c[:point])
       end
     end
 
     def line_to!(params)
       chunk(:line_to, params) do |c|
-        "%.3f %.3f l" % c[:point]
+        raw_chunk("%.3f %.3f l" % c[:point])
       end
     end
 
@@ -29,16 +30,16 @@ module Prawn
       end
 
       chunk(:curve_to, params) do |c|
-        "%.3f %.3f %.3f %.3f %.3f %.3f c" % (c[:bound1] + c[:bound2] + c[:point])
+        raw_chunk("%.3f %.3f %.3f %.3f %.3f %.3f c" % (c[:bound1] + c[:bound2] + c[:point]))
       end
     end
 
     def curve!(params)
       chunk(:curve, params) do |c|
-        [ move_to!(:point => params[:point1]),
-          curve_to!(:point  => params[:point2],
-                    :bound1 => params[:bound1],
-                    :bound2 => params[:bound2]) ]
+        [ move_to!(:point   => c[:point1]),
+          curve_to!(:point  => c[:point2],
+                    :bound1 => c[:bound1],
+                    :bound2 => c[:bound2]) ]
 
       end
     end
@@ -79,41 +80,113 @@ module Prawn
     end
 
     def circle!(params)
-      chunk(:circle, params) do
-        ellipse!(:point    => params[:point],
-                 :x_radius => params[:radius],
-                 :y_radius => params[:radius]) 
+      chunk(:circle, params) do |c|
+        ellipse!(:point    => c[:point],
+                 :x_radius => c[:radius],
+                 :y_radius => c[:radius]) 
                     
       end
     end
 
     def line!(params)
       chunk(:line, params) do |c|
-        [ move_to!(:point => c.params[:point1]), 
-          line_to!(:point => c.params[:point2]) ]
+        [ move_to!(:point => c[:point1]), 
+          line_to!(:point => c[:point2]) ]
       end
     end
 
     def stroke!
-      chunk(:stroke) { "S" }
+      chunk(:stroke) { raw_chunk("S") }
     end
 
     def fill!
-      chunk(:fill) { "F" }
+      chunk(:fill) { raw_chunk("F") }
     end
 
     def fill_and_stroke!
-      chunk(:fill_and_stroke) { "b" }
+      chunk(:fill_and_stroke) { raw_chunk("b") }
     end
      
     def rectangle!(params)
       chunk(:rectangle, params) do |c|
-        x,y = params[:point]
-        y  -= params[:height]
+        x,y = c[:point]
+        y  -= c[:height]
 
-        "%.3f %.3f %.3f %.3f re" % [ x, y, params[:width], params[:height] ]
+        raw_chunk(
+          "%.3f %.3f %.3f %.3f re" % [ x, y, c[:width], c[:height] ])
       end
     end
 
+    def polygon!(params)
+      chunk(:polygon, params) do |c|
+        out = [move_to!(:point =>  c[:points].first)]
+        (c[:points][1..-1] << c[:points].first).each do |point|
+          out << line_to!(:point => point)
+        end
+        out + [raw_chunk("h")]
+      end
+    end
+
+    def rounded_polygon!(params)
+      chunk(:rounded_polygon, params) do |c|
+         out    = [move_to!(:point => point_on_line(c[:radius], c[:points][1], c[:points][0]))]
+         sides  = c[:points].size
+         points = c[:points] + [c[:points][0], c[:points][1]]
+         
+         sides.times do |i|
+           out << rounded_vertex!(:radius => c[:radius], 
+                                  :point1 => points[i],
+                                  :point2 => points[i+1],
+                                  :point3 => points[i + 2])
+         end
+
+         out + [raw_chunk("h")]
+      end
+    end
+    
+    def rounded_vertex!(params)
+      chunk(:rounded_vertex, params) do |c|
+        x0,y0  = [:point1]
+        x1,y1  = c[:point2]
+        x1,y2  = c[:point3]
+        radius = c[:radius]
+
+        radial_point_1 = point_on_line(radius, c[:point1], c[:point2])
+        bezier_point_1 = point_on_line((radius - radius*KAPPA), c[:point1], c[:point2])
+        radial_point_2 = point_on_line(radius, c[:point3], c[:point2])
+        bezier_point_2 = point_on_line((radius - radius*KAPPA), c[:point3], c[:point2])
+
+        [ line_to!(:point => radial_point_1),
+          curve_to!(:point  => radial_point_2, 
+                    :bound1 => bezier_point_1,
+                    :bound2 => bezier_point_2) ]
+
+      end
+    end
+
+    def rounded_rectangle!(params)
+      chunk(:rounded_rectangle, params) do |c|
+        x,y = c[:point]
+        width, height, radius = c[:width], c[:height], c[:radius]
+        rounded_polygon!(:radius => radius,
+                         :points => [[x,y],[x + width, y],[x + width, y-height],[x, y - height]])
+      end
+    end
+
+    private
+
+    def degree_to_rad(angle)
+       angle * Math::PI / 180
+    end
+    
+    def point_on_line(distance_from_end, *points)
+      x0,y0,x1,y1 = points.flatten
+      length = Math.sqrt((x1 - x0)**2 + (y1 - y0)**2)
+      p = (length - distance_from_end) / length
+      xr = x0 + p*(x1 - x0)
+      yr = y0 + p*(y1 - y0)
+      [xr, yr]
+    end
+   
   end
 end
