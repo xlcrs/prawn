@@ -7,9 +7,10 @@
 module Prawn #:nodoc:
 end
 
+require "prawn/color"
 require "prawn/core"
 require "prawn/chunkable"
-require "prawn/canvas"
+require "prawn/drawing"
 require "prawn/text"
 require "prawn/graphics"
 require "prawn/images"

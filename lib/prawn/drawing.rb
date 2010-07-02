@@ -1,5 +1,5 @@
 module Prawn
-  class Canvas
+  class Drawing
     include Prawn::Chunkable
 
     def initialize(state)
@@ -8,18 +8,15 @@ module Prawn
       synchronize_state
     end
 
-    def synchronize_state
-      self.set_line_width(state.drawing.line_width)
-    end
-
     attr_accessor :chunks, :state
 
     chunk_methods :move_to, :line_to, :line, :stroke, :fill,
                   :curve_to, :curve, :rectangle, :ellipse, :circle, 
                   :polygon, :rounded_vertex, :rounded_polygon, :rounded_rectangle,
-                  :set_line_width
+                  :set_line_width, :set_stroke_color
 
     alias_method :line_width=, :set_line_width
+    alias_method :stroke_color=, :set_stroke_color
 
     def move_to!(params)
       chunk(:move_to, params) do |c|
@@ -115,18 +112,7 @@ module Prawn
     def fill_and_stroke!
       chunk(:fill_and_stroke) { raw_chunk("b") }
     end
-
-    def line_width
-      find_chunks(:command => :set_line_width).last[:width]
-    end
-
-    def set_line_width!(width)
-      chunk(:set_line_width, :width => width) do |c|
-        state.drawing.line_width = c[:width]
-        raw_chunk("#{c[:width]} w")
-      end
-    end
-     
+    
     def rectangle!(params)
       chunk(:rectangle, params) do |c|
         x,y = c[:point]
@@ -193,7 +179,38 @@ module Prawn
       end
     end
 
+    def synchronize_state
+      set_stroke_color(state.drawing.stroke_color)
+      set_line_width(state.drawing.line_width)
+    end
+
+    def set_stroke_color!(color)
+      chunk(:set_stroke_color, :color => color) do |c|
+        state.drawing.stroke_color = c[:color]
+        raw_color = Prawn::Color.new(color).to_pdf
+        raw_chunk("#{raw_color} SCN")
+      end
+    end
+
+    def line_width
+      find_chunks(:command => :set_line_width).last[:width]
+    end
+
+    def stroke_color
+      find_chunks(:command => :set_stroke_color).last[:color]
+    end
+
+    def set_line_width!(width)
+      chunk(:set_line_width, :width => width) do |c|
+        state.drawing.line_width = c[:width]
+        raw_chunk("#{c[:width]} w")
+      end
+    end
+
     private
+
+    def set_color_pdf(color)
+    end
 
     def degree_to_rad(angle)
        angle * Math::PI / 180

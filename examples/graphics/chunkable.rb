@@ -8,7 +8,7 @@ def paint(canvas, filename)
   doc.render_file(filename)
 end
 
-canvas = Prawn::Canvas.new(Prawn::State.new)
+canvas = Prawn::Drawing.new(Prawn::State.new)
 
 6.times do |i|
   canvas.line_width += 1
@@ -27,6 +27,9 @@ canvas.curve(:point1 => [100,100],
 canvas.rectangle(:point => [200,200], :width => 50, :height => 75)
 
 canvas.stroke
+canvas.stroke_color = "ff00ff"
+
+puts canvas.stroke_color
 
 canvas.ellipse(:point => [200,200], :x_radius => 10, :y_radius => 20)
 
@@ -43,6 +46,10 @@ canvas.stroke
 canvas.polygon(:points => [[300,300], [300,400], [400,400]])
 canvas.stroke
 
+canvas.stroke_color = "00afff"
+
+puts canvas.stroke_color
+
 canvas.rounded_polygon(:radius => 10, :points => [[100, 250], [200, 300], [300, 250],
                                                   [300, 150], [200, 100], [100, 150]])
 canvas.stroke
@@ -53,6 +60,7 @@ canvas.stroke
 paint(canvas, "x.pdf")
 
 
+`open x.pdf`
 
 
 
