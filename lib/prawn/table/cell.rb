@@ -20,6 +20,16 @@ module Prawn
       cell.draw
       cell
     end
+    
+    # Set up, but do not draw, a cell. Useful for creating cells with 
+    # formatting options to be inserted into a Table. Call +draw+ on the 
+    # resulting Cell to ink it.
+    #
+    # See the documentation on Prawn::Cell for details on the arguments.
+    #
+    def make_cell(content, options={})
+      Prawn::Table::Cell.make(self, content, options)
+    end
 
   end
 
@@ -200,12 +210,12 @@ module Prawn
       #
       def draw(pt=[x, y])
         draw_background(pt)
-        draw_borders(pt)
         @pdf.bounding_box([pt[0] + padding_left, pt[1] - padding_top], 
                           :width  => content_width + FPTolerance,
                           :height => content_height + FPTolerance) do
           draw_content
         end
+        draw_borders(pt)
       end
 
       # x-position of the cell within the parent bounds.
