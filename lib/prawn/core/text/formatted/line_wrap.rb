@@ -213,8 +213,8 @@ module Prawn
           def remember_this_fragment_for_backward_looking_ops
             @previous_fragment = @fragment_output.dup
             pf = @previous_fragment
-            @previous_fragment_ended_with_breakable = pf =~ /[#{break_chars}]$/
-            last_word = pf.slice(/[^#{break_chars}]*$/)
+            @previous_fragment_ended_with_breakable = pf =~ /[#{break_chars}]$/n
+            last_word = pf.slice(/[^#{break_chars}]*$/n)
             last_word_length = last_word.nil? ? 0 : last_word.length
             @previous_fragment_output_without_last_word = pf.slice(0, pf.length - last_word_length)
           end
