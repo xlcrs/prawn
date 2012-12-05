@@ -167,7 +167,10 @@ module Prawn
       # Returns minimum width required to contain cells in the set.
       #
       def min_width
-        aggregate_cell_values(:column, :avg_spanned_min_width, :max)
+        #aggregate_cell_values(:column, :avg_spanned_min_width, :max)
+        # Fix for https://github.com/prawnpdf/prawn/issues/407
+        # instead aggregate over :min_width_ignoring_span which seems to defer to the other columns without colspans.
+        aggregate_cell_values(:column, :min_width_ignoring_span, :max)
       end
 
       # Returns maximum width that can contain cells in the set.
